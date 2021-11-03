@@ -1,0 +1,26 @@
+workflows:
+  ios-debug:
+    environment:
+        xcode: 13.0
+        cocoapods: default
+        
+    scripts:
+      - name: Reolve SPM dependancy
+        script: sudo gem update xcodeproj
+      - name: fastlane development_build
+        script: fastlane development_build
+      - name: fastlane uploadToDiawi
+        script: fastlane uploadToDiawi
+
+  ios-release:
+      environment:
+          xcode: 13.0
+          cocoapods: default
+      scripts:
+        - name: Reolve SPM dependancy
+          script: sudo gem update xcodeproj
+        - name: fastlane release_build
+          script: fastlane release_build
+        - name: upload to app store
+          script: xcrun altool --upload-app -f "IPA/CodeMagicBuildDemo.ipa" -u {Email_ID} -p {App_Specific_Password} --type ios
+         

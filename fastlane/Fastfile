@@ -1,0 +1,190 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+# below command for build generation by default
+# fastlane build release:true export_method:development
+
+
+default_platform(:ios)
+
+emailID = ""
+
+ipaName = "CodeMagicBuildDemo.ipa"
+schemeName = "CodeMagicBuildDemo"
+keychainName = "FastlaneKeychain"
+keycghainPassword = "Fastlane123"
+
+
+profileNameDev = "Development_General"
+certificateNameDev = "Certificates.p12"
+certificatePassDev = ""
+bundleIDDev = "com.CodeMagicBuildDemo"
+
+profileNameAdhoc = ""
+bundleIDAdhoc = ""
+
+profileNameDist = ""
+certificateNameDist = ""
+certificatePassDist = ""
+bundleIDDist = ""
+
+diawiToken = ""
+
+
+platform :ios do
+  desc "Description of what the lane does"
+  
+  lane :development_archive do
+    provisionProfile = {
+      bundleIDDev => profileNameDev
+    }
+    build(
+      release: 'Debug',
+      export_method: 'development',
+      provisioningProfiles:provisionProfile
+    )
+  end
+
+  lane :development_build do
+    provisionProfile = {
+      bundleIDDev => profileNameDev
+    }
+    keychainCreation
+    certificateImport(
+      path: 'Certificate/Development/' + certificateNameDev,
+      certPassword: certificatePassDev
+    )
+    provisionProfileInstallation(
+      path: 'Certificate/Development/' + profileNameDev
+    )
+    build(
+      release: 'Debug',
+      export_method: 'development',
+      provisioningProfiles:provisionProfile
+    )
+  end
+
+  lane :adhoc_archive do
+    provisionProfile = {
+      bundleIDAdhoc => profileNameAdhoc
+    }
+    build(
+      release: 'Release',
+      export_method: 'app-store',
+      provisioningProfiles:provisionProfile
+    )
+  end
+
+  lane :adhoc_Build do
+    provisionProfile = {
+      bundleIDAdhoc => profileNameAdhoc
+    }
+    keychainCreation
+    certificateImport(
+      path: 'Certificate/Distribution/' + certificateNameDist,
+      certPassword: certificatePassDist
+    )
+    provisionProfileInstallation(
+      path: 'Certificate/Distribution/' + profileNameAdhoc
+    )
+    build(
+      release: 'Release',
+      export_method: 'app-store',
+      provisioningProfiles:provisionProfile
+    )
+  end
+  
+  lane :release_archive do
+    provisionProfile = {
+      bundleIDDist => profileNameDist
+    }
+    build(
+      release: 'Release',
+      export_method: 'app-store',
+      provisioningProfiles:provisionProfile
+    )
+  end
+
+  lane :release_Build do
+    provisionProfile = {
+      bundleIDDist => profileNameDist
+    }
+    keychainCreation
+    certificateImport(
+      path: 'Certificate/Distribution/' + certificateNameDist,
+      certPassword: certificatePassDist
+    )
+    provisionProfileInstallation(
+      path: 'Certificate/Distribution/' + profileNameDist
+    )
+    build(
+      release: 'Release',
+      export_method: 'app-store',
+      provisioningProfiles:provisionProfile
+    )
+  end
+  
+
+  lane :keychainCreation do 
+    create_keychain(
+      name: keychainName,
+      default_keychain: false,
+      unlock: true,
+      timeout: 3600,
+      lock_when_sleeps: true,
+      password: keycghainPassword
+    )
+  end
+
+  lane :certificateImport do  |options|
+    import_certificate(
+      certificate_path: options[:path],
+      certificate_password: options[:certPassword],
+      keychain_name: keychainName,
+      keychain_password: keycghainPassword
+    )
+  end
+
+  lane :provisionProfileInstallation do |options|
+    install_provisioning_profile(
+      path: options[:path] + ".mobileprovision"
+    )
+  end
+
+  lane :build do |options|
+  build_config = options[:release]
+  export_method = options[:export_method]
+  gym(
+        output_directory: 'IPA/',
+        output_name: ipaName,
+        scheme: schemeName,
+        clean: true,
+        include_bitcode: true,
+        configuration: 'Debug',
+        export_method: export_method,
+        export_options: {
+            provisioningProfiles: options[:profiles]
+        }
+    )
+  end
+
+  lane :uploadToDiawi do
+    diawi(
+    token: diawiToken,
+    file: "IPA/" + ipaName,
+    callback_emails: emailID
+    )
+  end
+
+end
